@@ -1,6 +1,6 @@
 
 
-import { View, Text, Alert, StyleSheet, TouchableHighlight } from "react-native"
+import { View, Text, Alert, StyleSheet, TouchableHighlight, Modal, Pressable, Dimensions } from "react-native"
 import { Button, Icon } from '@rneui/base';
 import { useState } from "react";
 import { cerrarSesion } from "../../Services/AutenticacionSrv";
@@ -10,6 +10,8 @@ import StyledText from '../../theme/StyledText';
 import { HelperText, TextInput } from 'react-native-paper';
 import theme from '../../theme/theme'
 import { validateEmail } from "../../commons/validations";
+import Logotipo from "../../../assets/HermesLogo.png";
+
 export const LoginForm = ({ navigation }) => {
     const [usuario, setUsuario] = useState();
     const [contraseña, setcontraseña] = useState();
@@ -18,23 +20,64 @@ export const LoginForm = ({ navigation }) => {
     const [hasErrorcorreo, sethasErrorcorreo] = useState(false)
     const [hasErrorcontraseña, sethasErrorcontraseña] = useState();
     const [cambiarOjo, setCambiarOjo] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [hasErrorcontraseña2, sethasErrorcontraseña2] = useState(false);
+
+    const [contraseña2, setcontraseña2] = useState();
     const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
     const contraseñaRegex = /^(?=\w*\d)(?=\w*[A-Z])(?=\w*[a-z])\S{8,16}$/;
-    const validaciones = () => {
+    const validaciones = async () => {
+        console.log("Entro a la validacion")
+        await Ingresar(usuario, contraseña, sethasErrorcontraseña2, setcontraseña2);
+        console.log("Estado MENSAJE eRROR", hasErrorcontraseña2)
+        console.log("Mensaje ERROR", contraseña2)
+
         if (contraseña == null || contraseña == "") {
             sethasErrorcontraseña(true)
             setErrorPassword("ingrese una contraseña")
+            setModalVisible(true);
 
-        } else if (usuario == null || usuario == "") {
+        } else {
 
             sethasErrorcontraseña(false)
-        } else if (!contraseñaRegex.test(contraseña)){
-            
-        }else if (!emailRegex.test(usuario)){
+            setModalVisible(true);
+
+            if (!contraseñaRegex.test(contraseña)) {
+                setErrorPassword("Contraseña no valida \nIntente  nuevamente \nRecuerde que debe tener 1 Mayúscula  y 1 número");
+                sethasErrorcontraseña(true)
+                setModalVisible(true);
+
+
+            } else {
+
+                sethasErrorcontraseña(false)
+            }
+
 
         }
-       
+        if (usuario == null || usuario == "") {
+            sethasErrorcorreo(true)
+            setErrorCorreo("Ingrese un correo")
+
+        } else {
+
+            sethasErrorcorreo(false)
+
+
+            if (!emailRegex.test(usuario)) {
+                setErrorCorreo("Correo no valido \n Intente  nuevamente");
+                sethasErrorcorreo(true)
+                setModalVisible(true);
+
+
+            } else {
+                setErrorCorreo("Ingrese un correo")
+                sethasErrorcorreo(false)
+            }
+
+
+        }
 
 
 
@@ -52,11 +95,9 @@ export const LoginForm = ({ navigation }) => {
 
 
 
-
-
-    const ValidarLogin = () => {
+    const ValidarLogin = async () => {
         validaciones()
-        Ingresar(usuario, contraseña);
+
 
         // Alert.alert("Vlaidando")
 
@@ -64,8 +105,39 @@ export const LoginForm = ({ navigation }) => {
     }
 
     return <View style={styles.container}>
+        <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => {
+                Alert.alert('Modal has been closed.');
+                setModalVisible(!modalVisible);
+            }}>
+            <View style={styles.centeredView}>
+                <View style={styles.modalView}>
+                    <Image
+                        style={[
+                            styles.logo,
+                            {
+                                height: 100,
+                                width: Dimensions.get("window").width,
+                                padding: 40
+                            },
+                        ]}
+                        source={Logotipo}
+                    />
+                    {hasErrorcorreo ? <StyledText subtitle >{errorCorreo}</StyledText> : hasErrorcontraseña ? <StyledText subtitle >{errorPassword}</StyledText> : hasErrorcontraseña2 ? <StyledText subtitle >{contraseña2}</StyledText> : <StyledText subtitle >Ingreso Exitoso</StyledText>}
+
+                    <Pressable
+                        style={[styles.button, styles.buttonClose]}
+                        onPress={() => setModalVisible(!modalVisible)}>
+                        {hasErrorcorreo ? <StyledText white body>Cerrar</StyledText> : hasErrorcontraseña ? <StyledText body white >Cerrar</StyledText> : hasErrorcontraseña2 ? <StyledText body white >Cerrar</StyledText> : <StyledText body white >Continuar</StyledText>}
+                    </Pressable>
+                </View>
+            </View>
+        </Modal>
         <View style={styles.cajaCabecera}>
-            <Image source={require('../../../assets/HermesLogo.png')}  style={{ width: 500, height: 160, margin: 30, resizeMode: 'contain' }}  />
+            <Image source={require('../../../assets/HermesLogo.png')} style={{ width: 500, height: 160, margin: 30, resizeMode: 'contain' }} />
         </View>
         <View style={styles.cajaCuerpo}>
 
@@ -199,6 +271,53 @@ const styles = StyleSheet.create({
         top: -11,
         left: 10,
         marginLeft: 11,
+    },
+    centeredView: {
+        flex: 1,
+        justifyContent: 'center',
+        // alignItems: 'center',
+        marginTop: "10%",
+        // backgroundColor: 'red',
+    },
+    modalView: {
+        backgroundColor: 'white',
+        borderRadius: 20,
+        paddingTop: "5%",
+        paddingHorizontal: "20%",
+        justifyContent: "space-around",
+        paddingBottom: "5%",
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    button: {
+        borderRadius: 20,
+        padding: 10,
+        elevation: 2,
+    },
+    buttonOpen: {
+        backgroundColor: '#F194FF',
+    },
+    buttonClose: {
+        backgroundColor: '#2196F3',
+    },
+    textStyle: {
+        color: 'white',
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    modalText: {
+        marginBottom: 15,
+        textAlign: 'center',
+    }, logo: {
+        marginVertical: 20,
+        resizeMode: "center",
     }
 
 });
